@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🏔️ Our New Zealand Family Adventure · Dec 2026</title>
+
+<!-- Leaflet map (free, no API key needed) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<style>
+  :root {
+    --sun: #ffb703;        /* warm sunny yellow */
+    --sun-deep: #fb8500;   /* friendly orange */
+    --sky: #219ebc;        /* friendly blue */
+    --sky-deep: #126782;   /* deep teal-blue */
+    --leaf: #2a9d8f;       /* fresh green */
+    --cream: #fffaf0;      /* soft cream background */
+    --card: #ffffff;
+    --ink: #2b2d42;        /* soft dark text */
+    --ink-soft: #5c6073;
+    --shadow: 0 8px 24px rgba(18, 103, 130, 0.12);
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 15% 10%, #fff3d6 0%, transparent 45%),
+      radial-gradient(circle at 85% 15%, #d8f3f0 0%, transparent 45%),
+      var(--cream);
+    line-height: 1.55;
+  }
+
+  /* ---------- Header / Hero ---------- */
+  header.hero {
+    background: linear-gradient(135deg, var(--sky) 0%, var(--sky-deep) 55%, var(--leaf) 120%);
+    color: #fff;
+    text-align: center;
+    padding: 46px 20px 70px;
+    position: relative;
+    overflow: hidden;
+  }
+  header.hero::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: -1px; height: 60px;
+    background: var(--cream);
+    clip-path: polygon(0 60%, 10% 40%, 22% 65%, 35% 30%, 48% 60%, 60% 25%, 73% 58%, 85% 35%, 100% 62%, 100% 100%, 0 100%);
+  }
+  .hero h1 { font-size: clamp(1.9rem, 5vw, 3rem); margin: 0 0 6px; }
+  .hero .sub { font-size: clamp(1rem, 2.5vw, 1.3rem); opacity: .95; margin: 0; }
+  .hero .dates {
+    display: inline-block; margin-top: 16px; padding: 8px 18px;
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px; font-weight: 600; backdrop-filter: blur(4px);
+  }
+
+  /* ---------- Countdown ---------- */
+  .countdown {
+    display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    margin: 22px auto 0; max-width: 520px; position: relative; z-index: 2;
+  }
+  .cd-box {
+    background: rgba(255,255,255,.95); color: var(--sky-deep);
+    border-radius: 14px; padding: 10px 6px; min-width: 74px;
+    box-shadow: var(--shadow);
+  }
+  .cd-num { font-size: 1.9rem; font-weight: 800; line-height: 1; }
+  .cd-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+  .cd-done { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+  /* ---------- Nav ---------- */
+  nav.tabs {
+    position: sticky; top: 0; z-index: 500;
+    display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+    padding: 12px; background: rgba(255,250,240,.92); backdrop-filter: blur(8px);
+    border-bottom: 2px solid #ffe3b3;
+  }
+  nav.tabs button {
+    font: inherit; font-weight: 700; cursor: pointer;
+    border: none; border-radius: 999px; padding: 10px 20px;
+    background: #fff; color: var(--sky-deep); box-shadow: var(--shadow);
+    transition: transform .12s ease, background .2s ease, color .2s ease;
+  }
+  nav.tabs button:hover { transform: translateY(-2px); }
+  nav.tabs button.active { background: var(--sun-deep); color: #fff; }
+
+  main { max-width: 1000px; margin: 0 auto; padding: 26px 16px 70px; }
+
+  .panel { display: none; animation: fade .3s ease; }
+  .panel.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px);} to {opacity:1; transform:none;} }
+
+  h2.section-title {
+    font-size: 1.5rem; display: flex; align-items: center; gap: 10px;
+    margin: 4px 0 18px;
+  }
+
+  /* ---------- Day cards ---------- */
+  .day-card {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    margin-bottom: 16px; overflow: hidden; border: 1px solid #fdeccb;
+  }
+  .day-head {
+    display: flex; align-items: center; gap: 14px; cursor: pointer;
+    padding: 16px 18px; user-select: none;
+    background: linear-gradient(135deg, #fff6e2, #fffdf7);
+  }
+  .day-head:hover { background: linear-gradient(135deg, #ffeecb, #fffdf7); }
+  .day-badge {
+    flex: 0 0 auto; width: 54px; height: 54px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--sun), var(--sun-deep));
+    color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 800; box-shadow: 0 4px 10px rgba(251,133,0,.35);
+  }
+  .day-badge small { font-size: .62rem; font-weight: 700; opacity: .9; }
+  .day-badge span { font-size: 1.4rem; line-height: 1; }
+  .day-head .meta { flex: 1 1 auto; }
+  .day-head .meta .date { font-size: .82rem; color: var(--ink-soft); font-weight: 600; }
+  .day-head .meta .city { font-size: 1.12rem; font-weight: 800; color: var(--sky-deep); }
+  .day-head .chev { font-size: 1.4rem; color: var(--sun-deep); transition: transform .25s ease; }
+  .day-card.open .chev { transform: rotate(180deg); }
+
+  .day-body {
+    max-height: 0; overflow: hidden; transition: max-height .35s ease;
+    padding: 0 18px;
+  }
+  .day-card.open .day-body { max-height: 2600px; padding: 4px 18px 20px; }
+
+  .act {
+    display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px dashed #f0e2c4;
+  }
+  .act:last-child { border-bottom: none; }
+  .act .ic { font-size: 1.3rem; flex: 0 0 auto; width: 30px; text-align: center; }
+  .act .txt { flex: 1; white-space: pre-line; }
+  .act .time { font-weight: 700; color: var(--sky); font-size: .85rem; }
+
+  .stay-chip {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+    background: #e7f6f4; color: #1f7a6f; border-radius: 999px;
+    padding: 6px 14px; font-weight: 700; font-size: .9rem;
+  }
+  .tag {
+    display: inline-block; margin: 2px 4px 2px 0; padding: 2px 10px;
+    border-radius: 999px; font-size: .72rem; font-weight: 700;
+  }
+  .tag-kids { background: #fff0d6; color: #b86a00; }
+  .tag-food { background: #e7f6f4; color: #1f7a6f; }
+  .tag-drive { background: #e3f1f8; color: #126782; }
+  .tag-opt  { background: #efe9fb; color: #6a4ca5; }
+
+  /* ---------- Map ---------- */
+  #map { height: 540px; border-radius: var(--radius); box-shadow: var(--shadow); border: 3px solid #fff; }
+  .map-hint { color: var(--ink-soft); font-size: .9rem; margin: 0 0 12px; }
+  .leaflet-popup-content { font-weight: 600; }
+
+  /* ---------- Packing ---------- */
+  .weather-note {
+    background: linear-gradient(135deg, #e3f1f8, #e7f6f4);
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px;
+    border-left: 6px solid var(--sky); box-shadow: var(--shadow);
+  }
+  .weather-note strong { color: var(--sky-deep); }
+  .pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .pack-cat {
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 16px 18px; border: 1px solid #fdeccb;
+  }
+  .pack-cat h3 { margin: 0 0 10px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+  .pack-cat label {
+    display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer;
+    font-size: .95rem;
+  }
+  .pack-cat input { width: 18px; height: 18px; accent-color: var(--leaf); cursor: pointer; }
+  .pack-cat label.checked span { text-decoration: line-through; color: #aab; }
+  .progress-wrap { background: #ffe8c2; border-radius: 999px; height: 14px; overflow: hidden; margin: 6px 0 22px; }
+  .progress-bar { height: 100%; width: 0; background: linear-gradient(90deg, var(--leaf), var(--sun)); transition: width .3s ease; }
+
+  footer {
+    text-align: center; color: var(--ink-soft); padding: 24px 16px 40px; font-size: .85rem;
+  }
+  .fun-fact {
+    max-width: 1000px; margin: 0 auto 24px; background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 14px 20px; border-left: 6px solid var(--sun);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .fun-fact .emoji { font-size: 1.6rem; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>🏔️ Our New Zealand Family Adventure</h1>
+  <p class="sub">South Island Road Trip · Summer Down Under 🌿</p>
+  <div class="dates">📅 Fri 11 Dec → Wed 23 Dec 2026 · 13 days</div>
+
+  <div class="countdown" id="countdown">
+    <div class="cd-box"><div class="cd-num" id="cd-d">–</div><div class="cd-label">Days</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-h">–</div><div class="cd-label">Hours</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-m">–</div><div class="cd-label">Mins</div></div>
+    <div class="cd-box"><div class="cd-num" id="cd-s">–</div><div class="cd-label">Secs</div></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="itinerary">🗓️ Day by Day</button>
+  <button data-tab="map">🗺️ Trip Map</button>
+  <button data-tab="packing">🎒 Packing List</button>
+</nav>
+
+<main>
+  <!-- fun fact -->
+  <div class="fun-fact">
+    <span class="emoji">🐑</span>
+    <div><strong>Fun fact:</strong> New Zealand has roughly 5 sheep for every person — the South Island summer (December) means long sunny days with light up to ~9pm. Perfect for family adventures!</div>
+  </div>
+
+  <!-- ITINERARY -->
+  <section class="panel active" id="itinerary">
+    <h2 class="section-title">🗓️ Day by Day <span style="font-size:.8rem;color:var(--ink-soft);font-weight:600">(tap a day to open)</span></h2>
+    <div id="days"></div>
+  </section>
+
+  <!-- MAP -->
+  <section class="panel" id="map-panel">
+    <h2 class="section-title">🗺️ Where We're Going</h2>
+    <p class="map-hint">Each pin is a stop on our journey — tap one to see the day and highlights. Needs internet to load the map.</p>
+    <div id="map"></div>
+  </section>
+
+  <!-- PACKING -->
+  <section class="panel" id="packing">
+    <h2 class="section-title">🎒 Smart Packing List</h2>
+    <div class="weather-note">
+      <strong>🌤️ Weather in December (NZ summer):</strong> The South Island in mid-December is pleasant and sunny but changeable. Expect warm days of about <strong>18–25&nbsp;°C</strong> and cool evenings around <strong>8–12&nbsp;°C</strong>, especially near Lake Tekapo, Mount Cook and Queenstown. Mountain and lake areas can get chilly and windy, the sun is <strong>very strong</strong> (high UV), and a quick shower is always possible. In short: <strong>pack layers, sun protection, and a light rain jacket</strong>.
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="packBar"></div></div>
+    <div class="pack-grid" id="packGrid"></div>
+  </section>
+</main>
+
+<footer>
+  Made with ❤️ for the family · Have an amazing trip! 🧳✈️🏔️
+</footer>
+
+<script>
+/* =================== TRIP DATA =================== */
+const TRIP_START = new Date("2026-12-11T09:30:00+13:00"); // Keith's flight lands, NZ time
+
+const days = [
+  { n:1, dow:"Friday", date:"11 Dec", city:"Christchurch → Lake Tekapo", lat:-43.5321, lng:172.6362,
+    acts:[
+      {t:"09:30", ic:"✈️", d:"Keith's flight lands — SQ 297 into Christchurch", tag:"tag-drive"},
+      {t:"06:20", ic:"✈️", d:"YK + TAT family flight arrives"},
+      {ic:"🚗", d:"Collect rental car — Go Rental (Keith)", tag:"tag-drive"},
+      {ic:"🥪", d:"Lunch with Chris's family around Christchurch; grocery & dried-food run at New World / Woolworths", tag:"tag-food"},
+      {ic:"👨‍👩‍👧‍👦", d:"Meet YK & Tat family around 3:30–4:00pm"},
+      {ic:"🚙", d:"Drive to Lake Tekapo (~3 hours) — ETA about 7:30pm", tag:"tag-drive"},
+      {ic:"🛏️", d:"Check in, dinner & rest"},
+    ], stay:"Lake Tekapo (Airbnb)" },
+
+  { n:2, dow:"Saturday", date:"12 Dec", city:"Lake Tekapo", lat:-44.0049, lng:170.4790,
+    acts:[
+      {ic:"⛪", d:"Explore: Church of the Good Shepherd · Sheep Dog Memorial · MacLaren Footbridge"},
+      {ic:"🔭", d:"Mount John Lookout & Astro Café · lupin flower fields"},
+      {ic:"🍽️", d:"Lunch @ The Better Batter NZ", tag:"tag-food"},
+      {ic:"🏡", d:"Rest at the Airbnb"},
+      {ic:"🌸", d:"Optional: Lake Tekapo Lupin Field · Petting Zoo", tag:"tag-opt"},
+      {ic:"🌌", d:"Dinner at the Airbnb, then stargazing (Dark Sky Reserve!)"},
+    ], stay:"Lake Tekapo (Airbnb)" },
+
+  { n:3, dow:"Sunday", date:"13 Dec", city:"Lake Tekapo → Mount Cook → Twizel", lat:-43.7340, lng:170.0960,
+    acts:[
+      {ic:"🏔️", d:"Journey to Mount Cook (1 hr 30 min)", tag:"tag-drive"},
+      {ic:"🥾", d:"Hooker Valley Track — prepare snacks / bread / water (few lunch spots nearby)"},
+      {ic:"🛏️", d:"Check in to the Airbnb at Twizel"},
+      {ic:"🚶", d:"Free & easy near Twizel — Lake Pukaki, Aoraki views, playground + dinner", tag:"tag-kids"},
+    ], stay:"Twizel (Airbnb)" },
+
+  { n:4, dow:"Monday", date:"14 Dec", city:"Twizel → Cromwell → Queenstown", lat:-45.0312, lng:168.6626,
+    acts:[
+      {ic:"🚙", d:"Journey to Cromwell (2 hrs) — stop by the Clay Cliffs", tag:"tag-drive"},
+      {ic:"🍴", d:"Lunch near Cromwell", tag:"tag-food"},
+      {ic:"🍒", d:"Cherry picking @ Cromwell", tag:"tag-kids"},
+      {ic:"🚗", d:"Continue to Queenstown (~50 min)", tag:"tag-drive"},
+      {ic:"🍔", d:"Check in Queenstown, dinner — try Fergburger, 'best burger in the world'", tag:"tag-food"},
+    ], stay:"Queenstown (Airbnb)" },
+
+  { n:5, dow:"Tuesday", date:"15 Dec", city:"Queenstown — Day Trip to Wanaka", lat:-44.7032, lng:169.1321,
+    acts:[
+      {ic:"🌟", d:"Alternative: book a full-day tour to Milford Sound for anyone interested", tag:"tag-opt"},
+      {ic:"🚗", d:"Day trip to Wanaka (1 hr 10 min)", tag:"tag-drive"},
+      {ic:"🌳", d:"Free & easy — #ThatWanakaTree, Dinosaur Playground, Rotary Playground along the lakeside (all close together)", tag:"tag-kids"},
+      {ic:"🍰", d:"Café hopping, kopi time & dessert for those strolling around", tag:"tag-food"},
+      {ic:"🍽️", d:"Lunch @ Wanaka", tag:"tag-food"},
+      {ic:"🚂", d:"National Transport & Toy Museum (Wanaka)", tag:"tag-kids"},
+      {ic:"📸", d:"Back to Queenstown — photo stops: Crown Range Road Scenic Lookout, Arrow Junction Lookout"},
+      {ic:"🌙", d:"Dinner / free & easy"},
+    ], stay:"Queenstown (Airbnb)" },
+
+  { n:6, dow:"Wednesday", date:"16 Dec", city:"Queenstown — Arrowtown & Vineyard", lat:-44.9389, lng:168.8311,
+    acts:[
+      {ic:"🚗", d:"Journey to Arrowtown (30 min)", tag:"tag-drive"},
+      {ic:"🏘️", d:"Stroll the historic main street · Lake District Museum (kids friendly) · coffee break · Arrowtown Chinese Settlement", tag:"tag-kids"},
+      {ic:"🍴", d:"Lunch @ Arrowtown", tag:"tag-food"},
+      {ic:"🍷", d:"Head to Mt. Difficulty Winery (award-winning Pinot Noir) — 40 min drive. Wine tasting, drinks & snacks", tag:"tag-opt"},
+      {ic:"🚙", d:"Back to Queenstown", tag:"tag-drive"},
+    ], stay:"Queenstown (Airbnb)" },
+
+  { n:7, dow:"Thursday", date:"17 Dec", city:"Queenstown — Walter Peak Farm", lat:-45.0312, lng:168.6626,
+    acts:[
+      {ic:"😴", d:"Lazy morning — wake up late!"},
+      {ic:"⛴️", d:"Walter Peak BBQ dining with scenic cruise around Lake Wakatipu — top-rated BBQ in Queenstown", tag:"tag-food"},
+      {ic:"🐕", d:"(Keith checking with tour company whether lunch includes a farm dog show — if not, may move to dinner)"},
+      {ic:"🛍️", d:"Free & easy and shopping in Queenstown — note: NZ shops close early, around 6–7pm"},
+    ], stay:"Queenstown (Airbnb)" },
+
+  { n:8, dow:"Friday", date:"18 Dec", city:"Queenstown → Dunedin", lat:-45.8788, lng:170.5028,
+    acts:[
+      {ic:"🚗", d:"Long drive to Dunedin (~4 hours) — at least 2 rest stops planned", tag:"tag-drive"},
+      {ic:"🧭", d:"Free & easy — Signal Hill Viewpoint · Baldwin Street (world's steepest street)"},
+      {ic:"🐧", d:"Optional: Blue Penguins Pukekura experience tour — starts from 9pm", tag:"tag-opt"},
+    ], stay:"Dunedin (Airbnb)" },
+
+  { n:9, dow:"Saturday", date:"19 Dec", city:"Dunedin", lat:-45.8788, lng:170.5028,
+    acts:[
+      {ic:"🚉", d:"Dunedin Railway Station"},
+      {ic:"🔬", d:"Otago Museum Science Centre (kids friendly) / Botanic Garden", tag:"tag-kids"},
+      {ic:"🍴", d:"Lunch & rest", tag:"tag-food"},
+      {ic:"🏰", d:"Explore Otago Peninsula for those interested (40 min drive) — Larnach Castle, viewpoints, or Botanic Garden near town", tag:"tag-opt"},
+    ], stay:"Dunedin (Airbnb)" },
+
+  { n:10, dow:"Sunday", date:"20 Dec", city:"Dunedin → Christchurch", lat:-43.5321, lng:172.6362,
+    acts:[
+      {ic:"🚙", d:"Long road-trip drive Dunedin → Christchurch — stop by Oamaru (Scott's beer) and Timaru", tag:"tag-drive"},
+      {ic:"🛏️", d:"Check in Christchurch (Airbnb) and rest"},
+      {ic:"🍽️", d:"Dinner", tag:"tag-food"},
+    ], stay:"Christchurch (Airbnb)" },
+
+  { n:11, dow:"Monday", date:"21 Dec", city:"Christchurch → Hanmer Springs", lat:-42.5235, lng:172.8276,
+    acts:[
+      {ic:"🚗", d:"Travel to Hanmer Springs (thermal pool water park) — 2 hours from Christchurch", tag:"tag-drive"},
+      {ic:"♨️", d:"Spend the day in Hanmer Springs — kids' activities & thermal pools", tag:"tag-kids"},
+    ], stay:"Christchurch (Airbnb)" },
+
+  { n:12, dow:"Tuesday", date:"22 Dec", city:"Christchurch — Chill Day", lat:-43.5321, lng:172.6362,
+    acts:[
+      {ic:"🚶", d:"Stroll around Christchurch"},
+      {ic:"🥞", d:"Brunch @ Child Sister", tag:"tag-food"},
+      {ic:"🚋", d:"Christchurch Tram", tag:"tag-kids"},
+      {ic:"🛍️", d:"Shopping & window shopping"},
+      {ic:"🍽️", d:"Dinner", tag:"tag-food"},
+      {ic:"🧳", d:"Packing & rest"},
+    ], stay:"Christchurch (Airbnb)" },
+
+  { n:13, dow:"Wednesday", date:"23 Dec", city:"Christchurch — Fly Home ✈️", lat:-43.4894, lng:172.5320,
+    acts:[
+      {ic:"✈️", d:"Chris + SK flight 14:10"},
+      {ic:"✈️", d:"Keith + Susan + Mom flight 17:20"},
+      {ic:"👋", d:"Safe travels home — what a trip!"},
+    ], stay:"Departure day" },
+];
+
+/* =================== RENDER DAY CARDS =================== */
+const daysEl = document.getElementById("days");
+days.forEach((d, i) => {
+  const card = document.createElement("div");
+  card.className = "day-card" + (i === 0 ? " open" : "");
+  const actsHtml = d.acts.map(a => `
+    <div class="act">
+      <div class="ic">${a.ic}</div>
+      <div class="txt">${a.t ? `<span class="time">${a.t}</span> ` : ""}${a.d}
+        ${a.tag ? `<span class="tag ${a.tag}">${tagLabel(a.tag)}</span>` : ""}
+      </div>
+    </div>`).join("");
+  card.innerHTML = `
+    <div class="day-head">
+      <div class="day-badge"><small>DAY</small><span>${d.n}</span></div>
+      <div class="meta">
+        <div class="date">${d.dow} · ${d.date} 2026</div>
+        <div class="city">${d.city}</div>
+      </div>
+      <div class="chev">⌄</div>
+    </div>
+    <div class="day-body">
+      ${actsHtml}
+      <div class="stay-chip">🛏️ Stay: ${d.stay}</div>
+    </div>`;
+  card.querySelector(".day-head").addEventListener("click", () => card.classList.toggle("open"));
+  daysEl.appendChild(card);
+});
+
+function tagLabel(t){
+  return {"tag-kids":"👧 Kids","tag-food":"🍴 Eat","tag-drive":"🚗 Drive","tag-opt":"✨ Optional"}[t] || "";
+}
+
+/* =================== COUNTDOWN =================== */
+function tick(){
+  const now = new Date();
+  let diff = Math.floor((TRIP_START - now) / 1000);
+  const cd = document.getElementById("countdown");
+  if (diff <= 0){
+    cd.innerHTML = '<div class="cd-done">🎉 The adventure has begun — enjoy New Zealand!</div>';
+    return;
+  }
+  const d = Math.floor(diff/86400); diff -= d*86400;
+  const h = Math.floor(diff/3600);  diff -= h*3600;
+  const m = Math.floor(diff/60);    diff -= m*60;
+  const s = diff;
+  document.getElementById("cd-d").textContent = d;
+  document.getElementById("cd-h").textContent = String(h).padStart(2,"0");
+  document.getElementById("cd-m").textContent = String(m).padStart(2,"0");
+  document.getElementById("cd-s").textContent = String(s).padStart(2,"0");
+}
+tick(); setInterval(tick, 1000);
+
+/* =================== TABS =================== */
+let mapBuilt = false;
+document.querySelectorAll("nav.tabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    document.getElementById(tab === "map" ? "map-panel" : tab).classList.add("active");
+    if (tab === "map" && !mapBuilt){ buildMap(); mapBuilt = true; }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+});
+
+/* =================== MAP =================== */
+function buildMap(){
+  const map = L.map("map").setView([-44.5, 170.0], 6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Unique stops in travel order (skip duplicate Queenstown/Christchurch pins)
+  const seen = new Set();
+  const route = [];
+  days.forEach(d => {
+    const key = d.lat.toFixed(2)+","+d.lng.toFixed(2);
+    route.push([d.lat, d.lng]);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const marker = L.marker([d.lat, d.lng]).addTo(map);
+    marker.bindPopup(`<b>Day ${d.n} · ${d.date}</b><br>${d.city}`);
+  });
+
+  // draw the journey line
+  L.polyline(route, { color: "#fb8500", weight: 4, opacity: .75, dashArray: "8 8" }).addTo(map);
+
+  const bounds = L.latLngBounds(route);
+  map.fitBounds(bounds.pad(0.15));
+}
+
+/* =================== PACKING LIST (weather-based) =================== */
+const packing = {
+  "🌞 Sun Protection": [
+    "Sunscreen SPF 50+ (NZ sun is very strong!)",
+    "Sunglasses for everyone",
+    "Caps / sun hats",
+    "Lip balm with SPF"
+  ],
+  "🧥 Layers & Warmth": [
+    "Light fleece or sweater (cool evenings)",
+    "Warm jacket for Mt Cook & lake areas",
+    "Long pants + shorts (changeable weather)",
+    "Beanie & light gloves for stargazing nights",
+    "Comfortable T-shirts"
+  ],
+  "🌧️ Just-in-case Weather": [
+    "Light waterproof rain jacket",
+    "Small travel umbrella",
+    "Quick-dry clothing"
+  ],
+  "👟 Footwear": [
+    "Comfy walking / hiking shoes (Hooker Valley Track)",
+    "Sandals or slip-ons",
+    "Spare socks"
+  ],
+  "🏊 Water & Fun": [
+    "Swimwear (Hanmer Springs thermal pools)",
+    "Quick-dry towel",
+    "Kids' water-play clothes"
+  ],
+  "👶 Family & Kids": [
+    "Snacks for long drives",
+    "Travel games / tablet + chargers",
+    "Reusable water bottles",
+    "Wet wipes & tissues",
+    "Small first-aid kit"
+  ],
+  "📄 Documents & Money": [
+    "Passports & flight details",
+    "Driving licence + International Driving Permit",
+    "Travel insurance papers",
+    "Credit cards + some NZD cash",
+    "Airbnb booking confirmations"
+  ],
+  "🔌 Tech & Misc": [
+    "NZ power adapter (Type I plug)",
+    "Phone + camera chargers",
+    "Power bank",
+    "Reusable shopping bags",
+    "Motion-sickness tablets for windy roads"
+  ]
+};
+
+const grid = document.getElementById("packGrid");
+let totalItems = 0;
+Object.entries(packing).forEach(([cat, items]) => {
+  const box = document.createElement("div");
+  box.className = "pack-cat";
+  box.innerHTML = `<h3>${cat}</h3>`;
+  items.forEach(it => {
+    totalItems++;
+    const id = "p" + totalItems;
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="checkbox" id="${id}"><span>${it}</span>`;
+    const cb = label.querySelector("input");
+    const saved = localStorage.getItem("nzpack_" + id);
+    if (saved === "1"){ cb.checked = true; label.classList.add("checked"); }
+    cb.addEventListener("change", () => {
+      label.classList.toggle("checked", cb.checked);
+      localStorage.setItem("nzpack_" + id, cb.checked ? "1" : "0");
+      updateBar();
+    });
+    box.appendChild(label);
+  });
+  grid.appendChild(box);
+});
+
+function updateBar(){
+  const boxes = document.querySelectorAll('#packGrid input[type=checkbox]');
+  const done = [...boxes].filter(b => b.checked).length;
+  const pct = boxes.length ? Math.round(done / boxes.length * 100) : 0;
+  document.getElementById("packBar").style.width = pct + "%";
+}
+updateBar();
+</script>
+</body>
+</html>
